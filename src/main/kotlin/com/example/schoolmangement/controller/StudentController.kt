@@ -1,33 +1,39 @@
 package com.example.schoolmangement.controller
 
+import com.example.schoolmangement.base.reponse.MessageResponse
+import com.example.schoolmangement.base.reponse.ObjectResponse
+import com.example.schoolmangement.base.reponse.PageResponse
 import com.example.schoolmangement.dto.StudentDto
 import com.example.schoolmangement.model.Student
 import com.example.schoolmangement.service.StudentService
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import com.example.schoolmangement.util.contants.Constant
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/v1/student")
+@RequestMapping("${Constant.MAIN_URL}student")
 class StudentController(private val studentService: StudentService) {
 
     @GetMapping
-    fun index(): Iterable<StudentDto> {
-        return studentService.index()
+    fun index(
+        @RequestParam(required = false) name: String?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): PageResponse<StudentDto?> {
+        return studentService.index(name , page, size)
     }
 
     @GetMapping("{id}")
-    fun show(@PathVariable("id") id: Long): StudentDto {
+    fun show(@PathVariable("id") id: Long): ObjectResponse<StudentDto> {
         return studentService.show(id)
     }
 
     @DeleteMapping("{id}")
-    fun deleteById(@PathVariable("id") id: Long): ResponseEntity<HttpStatus> {
+    fun deleteById(@PathVariable("id") id: Long): MessageResponse {
         return studentService.deleteById(id)
     }
 
     @PostMapping("{department_id}")
-    fun save(@RequestBody student: Student, @PathVariable("department_id") id: Long): ResponseEntity<HttpStatus> {
+    fun save(@RequestBody student: Student, @PathVariable("department_id") id: Long): MessageResponse {
         return studentService.save(student, id)
     }
 
@@ -35,7 +41,7 @@ class StudentController(private val studentService: StudentService) {
     fun updateById(
         @RequestBody updatedStudent: StudentDto,
         @PathVariable("department_id") id: Long
-    ): StudentDto {
+    ): MessageResponse {
         return studentService.updateById(updatedStudent, id)
     }
 }

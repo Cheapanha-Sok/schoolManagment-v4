@@ -1,5 +1,7 @@
 package com.example.schoolmangement.service.impl
 
+import com.example.schoolmangement.base.reponse.MessageResponse
+import com.example.schoolmangement.base.reponse.ObjectResponse
 import com.example.schoolmangement.exception.NotFoundException
 import com.example.schoolmangement.model.Role
 import com.example.schoolmangement.repository.RoleRepository
@@ -11,33 +13,26 @@ import java.util.Optional
 
 @Service
 class RoleServiceImpl(private val roleRepository: RoleRepository) : RoleService {
-    override fun show(id: Long): Role {
-        val role: Optional<Role> = roleRepository.findById(id)
-        if (role.isPresent) {
-            return role.get()
-        } else
-            throw NotFoundException("Role with id $id not found")
+    override fun show(id: Long): ObjectResponse<Role> {
+        val role: Role = roleRepository.findById(id)!!.orElseThrow { NotFoundException("Role with id $id not found") }
+        return ObjectResponse(role)
     }
 
-    override fun index(): Iterable<Role> {
-        return roleRepository.findAll()
+    override fun index(): ObjectResponse<List<Role>> {
+        return ObjectResponse(roleRepository.findAll())
     }
 
-    override fun deleteById(id: Long): ResponseEntity<HttpStatus> {
-        val isExist: Boolean = roleRepository.existsById(id)
-        if (isExist) {
-            roleRepository.deleteById(id)
-            return ResponseEntity.ok().build()
-        } else
-            throw NotFoundException("Role with id $id not found")
+    override fun deleteById(id: Long): MessageResponse {
+        val role : Role = roleRepository.findById(id)!!.orElseThrow {NotFoundException("Role with id $id not found")}
+        roleRepository.delete(role).let { return MessageResponse() }
     }
 
-    override fun save(newRole: Role): ResponseEntity<HttpStatus> {
+    override fun save(newRole: Role): MessageResponse {
         roleRepository.save(newRole)
-        return ResponseEntity.ok().build()
+        return MessageResponse()
     }
 
-    override fun updateById(updatedRole: Role, id: Long): Role {
+    override fun updateById(updatedRole: Role, id: Long): MessageResponse {
         TODO("Not yet implemented")
     }
 }

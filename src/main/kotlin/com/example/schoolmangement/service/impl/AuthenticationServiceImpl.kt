@@ -37,11 +37,9 @@ class AuthenticationServiceImpl(
     }
 
     override fun refreshToken(refreshToken: String): TokenResponseDto {
-        val isValid = refreshTokenService.verifyExpiration(refreshToken)
-        val account = accountRepository.findById(isValid.account!!.id!!)
-        val token = generateAccessToken(account.get())
+        val newToken = refreshTokenService.getNewToken(refreshToken)
         return TokenResponseDto(
-            token
+            newToken
         )
     }
     private fun generateAccessToken(user: UserDetails) = tokenService.generate(

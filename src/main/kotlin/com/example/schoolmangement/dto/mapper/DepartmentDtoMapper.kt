@@ -9,6 +9,7 @@ import java.util.function.Function
 class DepartmentDtoMapper : Function<Department, DepartmentDto> {
     override fun apply(department: Department): DepartmentDto {
         return DepartmentDto(
+            department.id!!,
             department.name!!,
             department.headName!!,
             department.officeNumber!!,

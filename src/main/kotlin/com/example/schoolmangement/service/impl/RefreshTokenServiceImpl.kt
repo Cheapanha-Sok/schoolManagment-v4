@@ -20,59 +20,49 @@ class RefreshTokenServiceImpl(
     private val accountRepository: AccountRepository,
     private val tokenService: TokenService
 ) : RefreshTokenService {
-    override fun createRefreshToken(username: String) {
-        val refreshToken = RefreshToken()
-        val account: Optional<Account> = accountRepository.findByName(username)
-        if (account.isPresent) {
-            refreshToken.account = account.get()
-            refreshToken.token = (UUID.randomUUID().toString())
-            refreshToken.expiryDate = Instant.now().plusMillis(jwtProperties.refreshTokenExpiration)
-            refreshTokenRepository.save(refreshToken)
-        } else
-            throw NotFoundException("Username with $username not found")
+
+    override fun createRefreshToken(account: Account): RefreshToken {
+        val refreshToken = RefreshToken(
+            account = account,
+            token = UUID.randomUUID().toString(),
+            expiryDate = Instant.now().plusMillis(jwtProperties.refreshTokenExpiration)
+        )
+        refreshTokenRepository.save(refreshToken).let { return refreshToken }
+
+    }
+    override fun findByToken(token: String): RefreshToken {
+        return refreshTokenRepository.findByToken(token).orElseThrow {
+            NotFoundException("Refresh token not found with token: $token")
+        }
     }
 
-    override fun findByToken(token: String): Optional<RefreshToken> {
-        return refreshTokenRepository.findByToken(token)
+    override fun verifyExpiration(date: Instant): Boolean {
+        return date.isAfter(Instant.now())
     }
 
-    override fun verifyExpiration(refreshToken: String): RefreshToken {
+    override fun getNewToken(refreshToken: String): String {
         val token = findByToken(refreshToken)
-        if (token.isPresent){
-            if (token.get().expiryDate!! < Instant.now()){
-                refreshTokenRepository.delete(token.get())
-                throw RuntimeException("$refreshToken Refresh token is expired. Please make a new login..!")
-            }
-            else
-                return token.get()
-        }else
-            throw RuntimeException("$refreshToken is invalid")
-    }
 
-    override fun findByAccount(username: String): TokenResponseDto {
-        val account: Optional<Account> = accountRepository.findByName(username)
-        if (account.isPresent) {
-            val refreshToken = refreshTokenRepository.findByAccount(account.get())
-            if (refreshToken.isPresent) {
-                val accessToken: String = tokenService.generate(
-                    account.get(),
-                    Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration)
-                )
-                return TokenResponseDto(accessToken = accessToken)
-            }
-            throw NotFoundException("Refresh not create with this username ${account.get().username} yet")
-        } else
-            throw NotFoundException("Username with $username not found")
+        if (!verifyExpiration(token.expiryDate!!)) {
+            refreshTokenRepository.delete(token)
+            throw RuntimeException("Refresh token has expired. Please make a new login.")
+        }
+
+        val account = accountRepository.findById(token.account!!.id!!)?.orElseThrow {
+            NotFoundException("Account associated with the token not found")
+        }
+
+        return tokenService.generate(account!!, Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration))
     }
 
     override fun getRefreshToken(username: String): String {
-        val account = accountRepository.findByName(username)
-        if (account.isPresent){
-            val refreshToken = refreshTokenRepository.findByAccount(account.get())
-            if (refreshToken.isPresent){
-                return refreshToken.get().token!!
-            }
+        val account = accountRepository.findByName(username).orElseThrow {
+            NotFoundException("Username not found with name $username")
         }
-        throw NotFoundException("Username with $username not found")
+
+        val refreshToken = refreshTokenRepository.findByAccount(account).orElseGet {
+            createRefreshToken(account)
+        }
+        return refreshToken.token ?: throw NotFoundException("Refresh token not found")
     }
 }

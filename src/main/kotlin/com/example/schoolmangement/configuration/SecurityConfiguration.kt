@@ -2,6 +2,7 @@ package com.example.schoolmangement.configuration
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -19,7 +20,10 @@ class SecurityConfiguration (private val authenticationProvider: AuthenticationP
         jwtAuthenticationFilter: JwtAuthenticationFilter
     ) : DefaultSecurityFilterChain = http.csrf { it.disable() }
         .authorizeHttpRequests{it.requestMatchers("/api/auth" , "/api/auth/refreshToken" , "/error").permitAll()
-            .requestMatchers("/api/v1/**").hasRole("STUDENT")
+//            .requestMatchers(HttpMethod.POST,"/api/v1/**").hasRole("ADMIN")
+//            .requestMatchers(HttpMethod.DELETE,"/api/v1/**").hasRole("ADMIN")
+//            .requestMatchers(HttpMethod.PUT,"/api/v1/**").hasRole("STUDENT")
+            .requestMatchers("/api/v1/**").authenticated()
             .anyRequest().fullyAuthenticated()
         }
         .sessionManagement {it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

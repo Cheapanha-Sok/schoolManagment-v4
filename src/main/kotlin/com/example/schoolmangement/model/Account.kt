@@ -12,7 +12,7 @@ data class Account(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
-    @Column(name = "username")
+    @Column(name = "username" , unique = true)
     private var name: String? = null,
     private var password: String? = null,
     @ManyToMany(fetch = FetchType.EAGER)

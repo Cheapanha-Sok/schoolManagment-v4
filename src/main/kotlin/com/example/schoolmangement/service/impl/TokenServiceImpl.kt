@@ -13,7 +13,6 @@ class TokenServiceImpl(private val jwtProperties: JwtProperties) : TokenService 
     private val secretKey = Keys.hmacShaKeyFor(
         jwtProperties.key.toByteArray()
     )
-
     override fun generate(
         userDetails: UserDetails,
         expirationDate: Date,

@@ -1,13 +1,13 @@
 package com.example.schoolmangement.service
 
-import com.example.schoolmangement.dto.TokenResponseDto
+import com.example.schoolmangement.model.Account
 import com.example.schoolmangement.model.RefreshToken
-import java.util.Optional
+import java.time.Instant
 
 interface RefreshTokenService {
-    fun createRefreshToken(username :String)
-    fun findByToken(token :String) : Optional<RefreshToken>
-    fun verifyExpiration( refreshToken: String) : RefreshToken
-    fun findByAccount(username :String) : TokenResponseDto
-    fun getRefreshToken(username : String) :String
+    fun createRefreshToken(account :Account):RefreshToken
+    fun findByToken(token :String) : RefreshToken
+    fun verifyExpiration(date: Instant): Boolean
+    fun getNewToken(refreshToken :String) : String
+    fun getRefreshToken(username :String) :String
 }

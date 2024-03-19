@@ -19,7 +19,7 @@ class StudentDtoMapper : Function<Student, StudentDto> {
             degree = student.degree!!,
 //            age = student.age!!,
             department = student.departments!!.map { it.name!! },
-            account = student.account!!.username!!
+            account = student.account?.username?:"No account yet"
         )
     }
 }

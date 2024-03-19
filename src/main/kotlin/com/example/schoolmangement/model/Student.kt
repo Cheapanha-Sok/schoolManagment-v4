@@ -22,8 +22,6 @@ data class Student(
     var generation: Int? = null,
     var year: Int? = null,
     var degree: String? = null,
-//    @Transient
-//    var age :Int = Period.between(dob,LocalDate.now()).years,
 
     @ManyToMany
     @JoinTable(

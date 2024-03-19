@@ -1,13 +1,13 @@
 package com.example.schoolmangement.dto
 
 data class TeacherDto(
-    var id :Long,
-    var name:String,
-    var gender:String,
-    var address :String,
-    var phoneNumber:String,
-    var courses: List<String>,
-    var account:List<String>?,
+    var id :Long ? =null,
+    var name:String ?=null,
+    var gender:String ?=null,
+    var address :String ? =null,
+    var phoneNumber:String ?=null,
+    var courses: List<String> ?=null,
+    var account:List<String>? =null,
 
 
 )

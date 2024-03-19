@@ -1,22 +1,22 @@
 package com.example.schoolmangement.service.impl
 
+import com.example.schoolmangement.base.reponse.MessageResponse
+import com.example.schoolmangement.base.reponse.ObjectResponse
+import com.example.schoolmangement.base.reponse.PageResponse
 import com.example.schoolmangement.dto.AccountDto
 import com.example.schoolmangement.dto.mapper.AccountDtoMapper
 import com.example.schoolmangement.exception.NotFoundException
 import com.example.schoolmangement.model.Account
 import com.example.schoolmangement.model.Role
-import com.example.schoolmangement.model.Student
-import com.example.schoolmangement.model.Teacher
 import com.example.schoolmangement.repository.AccountRepository
 import com.example.schoolmangement.repository.RoleRepository
 import com.example.schoolmangement.repository.StudentRepository
 import com.example.schoolmangement.repository.TeacherRepository
 import com.example.schoolmangement.service.AccountService
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import jakarta.persistence.criteria.Predicate
+import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import java.util.Optional
 
 @Service
 class AccountServiceImpl(
@@ -27,70 +27,57 @@ class AccountServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val accountDtoMapper: AccountDtoMapper
 ) : AccountService {
-    override fun show(id: Long): AccountDto {
-        val account: Optional<Account> = accountRepository.findById(id)
-        if (account.isPresent) {
-            return accountDtoMapper.apply(account.get())
-        } else
-            throw NotFoundException("Account with id $id not found")
+    override fun show(id: Long): ObjectResponse<AccountDto> {
+        val account = accountRepository.findById(id)?.orElseThrow { NotFoundException("Account not found with id $id") }
+        return ObjectResponse(accountDtoMapper.apply(account!!))
     }
 
-    override fun index(): Iterable<AccountDto> {
-        val accounts = accountRepository.findAll()
-        return accounts.map { account ->
-            accountDtoMapper.apply(account)
-        }
-    }
-
-    override fun deleteById(id: Long): ResponseEntity<HttpStatus> {
-        val isExist = accountRepository.existsById(id)
-        if (isExist) {
-            accountRepository.deleteById(id)
-            return ResponseEntity.noContent().build()
-        } else
-            throw NotFoundException("Account with id $id not found")
-    }
-
-    override fun saveTeacher(newAccount: Account, roleId: Long, teacherId: Long): ResponseEntity<HttpStatus> {
-        val teacher: Optional<Teacher> = teacherRepository.findById(teacherId)
-        val role: Optional<Role> = roleRepository.findById(roleId)
-        if (teacher.isPresent) {
-            if (role.isPresent) {
-                newAccount.roles = mutableListOf(role.get())
-                newAccount.setPassword(passwordEncoder.encode(newAccount.password))
-                val savedAccount = accountRepository.save(newAccount)
-                val teacherInstance = teacher.get()
-                teacherInstance.account = savedAccount
-                teacherRepository.save(teacherInstance)
-                return ResponseEntity.ok().build()
-            } else
-                throw NotFoundException("Role with $roleId not found")
-        } else
-            throw NotFoundException("Teacher with $teacherId not found")
-    }
-
-
-    override fun saveStudent(newAccount: Account, roleId: Long, studentId: Long): ResponseEntity<HttpStatus> {
-        val student: Optional<Student> = studentRepository.findById(studentId)
-        val role: Optional<Role> = roleRepository.findById(roleId)
-        if (student.isPresent) {
-            if (role.isPresent) {
-                newAccount.roles = mutableListOf(role.get())
-                newAccount.setPassword(passwordEncoder.encode(newAccount.password))
-                val savedAccount = accountRepository.save(newAccount)
-                val studentInstance = student.get()
-                studentInstance.account = savedAccount
-                studentRepository.save(studentInstance)
-                return ResponseEntity.ok().build()
-            } else {
-                throw NotFoundException("Role with $roleId not found")
+    override fun index(name :String ? , page :Int , size :Int): PageResponse<AccountDto?> {
+        val account = accountRepository.findAll({root , cq , cb ->
+            val predicates = ArrayList<Predicate>()
+            name?.let {
+                predicates.add(cb.like(cb.lower(root.get("name")),"%${it.lowercase()}%"))
             }
-        } else {
-            throw NotFoundException("Student with $studentId not found")
-        }
+            cq.orderBy(cb.desc(root.get<Long>("id")))
+            cb.and(*predicates.toTypedArray())
+        },PageRequest.of(page,size))
+        return PageResponse(account.totalElements , account.content.map { accountDtoMapper.apply(it) })
     }
 
-    override fun updateById(updatedAccount: AccountDto, id: Long): AccountDto {
+    override fun deleteById(id: Long): MessageResponse {
+        val account = accountRepository.findById(id)?.orElseThrow { NotFoundException("Account not found with id $id") }
+        accountRepository.delete(account!!).let { return MessageResponse() }
+    }
+
+    override fun saveTeacher(newAccount: Account, roleId: Long, teacherId: Long): MessageResponse {
+        val teacher = teacherRepository.findById(teacherId)
+            ?.orElseThrow { NotFoundException("Teacher not found with id $teacherId") }
+        val role = findRoleById(id = roleId)
+        newAccount.roles = mutableListOf(role!!)
+        newAccount.setPassword(passwordEncoder.encode(newAccount.password))
+        val savedAccount = accountRepository.save(newAccount)
+        teacher!!.account = savedAccount
+        teacherRepository.save(teacher)
+        return MessageResponse()
+    }
+
+    private fun findRoleById(id:Long) : Role?{
+        return roleRepository.findById(id)?.orElseThrow{ NotFoundException("Role not found with id $id") }
+    }
+
+    override fun saveStudent(newAccount: Account, roleId: Long, studentId: Long): MessageResponse {
+        val student = studentRepository.findById(studentId)
+            ?.orElseThrow { NotFoundException("Student not found with id $studentId") }
+        val role = findRoleById(id = roleId)
+        newAccount.roles = mutableListOf(role!!)
+        newAccount.setPassword(passwordEncoder.encode(newAccount.password))
+        val savedAccount = accountRepository.save(newAccount)
+        student!!.account = savedAccount
+        studentRepository.save(student)
+        return MessageResponse()
+    }
+
+    override fun updateById(updatedAccount: AccountDto, id: Long): MessageResponse {
         TODO("Not yet implemented")
     }
 }
