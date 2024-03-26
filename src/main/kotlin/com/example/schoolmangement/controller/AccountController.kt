@@ -21,7 +21,6 @@ class AccountController(private val accountService: AccountService) {
     ): PageResponse<AccountDto?>{
         return accountService.index(name, page , size)
     }
-
     @GetMapping("{id}")
     fun show(
         @PathVariable("id") id: Long,

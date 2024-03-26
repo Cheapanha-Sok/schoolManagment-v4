@@ -18,7 +18,6 @@ class AuthenticationServiceImpl(
     private val tokenService: TokenService,
     private val jwtProperties: JwtProperties,
     private val refreshTokenService: RefreshTokenService,
-    private val accountRepository: AccountRepository
 ) : AuthenticationService {
     override fun authenticate(username: String, password: String): LoginResponseDto {
         authManager.authenticate(
@@ -27,12 +26,14 @@ class AuthenticationServiceImpl(
             )
         )
         val user = userDetailsService.loadUserByUsername(username)
-        val accessToken = generateAccessToken(user)
-        val refreshToken = refreshTokenService.getRefreshToken(username)
+        val accessToken :String = generateAccessToken(user)
+        val refreshToken :String = refreshTokenService.getRefreshToken(username)
 
         return LoginResponseDto(
             accessToken = accessToken,
-            refreshToken = refreshToken
+            refreshToken = refreshToken,
+            username = user.username,
+            role = user.authorities.map { it.authority }
         )
     }
 

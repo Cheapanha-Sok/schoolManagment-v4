@@ -28,7 +28,6 @@ class RefreshTokenServiceImpl(
             expiryDate = Instant.now().plusMillis(jwtProperties.refreshTokenExpiration)
         )
         refreshTokenRepository.save(refreshToken).let { return refreshToken }
-
     }
     override fun findByToken(token: String): RefreshToken {
         return refreshTokenRepository.findByToken(token).orElseThrow {
@@ -51,7 +50,6 @@ class RefreshTokenServiceImpl(
         val account = accountRepository.findById(token.account!!.id!!)?.orElseThrow {
             NotFoundException("Account associated with the token not found")
         }
-
         return tokenService.generate(account!!, Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration))
     }
 
