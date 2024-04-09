@@ -25,7 +25,9 @@ data class Account(
     @OneToOne(mappedBy = "account")
     var teacher: Teacher? = null,
     @OneToOne(mappedBy = "account")
-    var student :Student? = null
+    var student :Student? = null,
+    @OneToOne(mappedBy = "account" , cascade = [CascadeType.REMOVE])
+    var refreshToken: RefreshToken?=null
 ) : UserDetails {
 
     override fun toString(): String {

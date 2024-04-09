@@ -13,6 +13,10 @@ import java.util.Optional
 @Service
 class UserDetailsServiceImpl(private val accountRepository: AccountRepository) : UserDetailsService {
     override fun loadUserByUsername(username: String): UserDetails {
-        return accountRepository.findByName(username).get()?:throw UsernameNotFoundException("Username with $username not found")
+        try {
+            return accountRepository.findByName(username).get()
+        }catch (e: UsernameNotFoundException){
+            throw UsernameNotFoundException("User $username not found")
+        }
     }
 }
