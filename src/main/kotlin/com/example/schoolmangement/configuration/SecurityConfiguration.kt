@@ -9,27 +9,33 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.DefaultSecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
-
 @Configuration
 @EnableWebSecurity
-class SecurityConfiguration (private val authenticationProvider: AuthenticationProvider) {
+class SecurityConfiguration(private val authenticationProvider: AuthenticationProvider) {
+
+    private val SWAGGER = listOf(
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/swagger-resources/**",
+        "/swagger-resources/"
+    )
+
     @Bean
     fun securityFilterChain(
         http: HttpSecurity,
         jwtAuthenticationFilter: JwtAuthenticationFilter
-    ) : DefaultSecurityFilterChain = http.csrf { it.disable() }
-        .authorizeHttpRequests{it.requestMatchers("/api/auth" , "/api/auth/refreshToken" , "/error").permitAll()
-//            .requestMatchers(HttpMethod.POST,"/api/v1/**").hasRole("ADMIN")
-//            .requestMatchers(HttpMethod.DELETE,"/api/v1/**").hasRole("ADMIN")
-//            .requestMatchers(HttpMethod.PUT,"/api/v1/**").hasRole("STUDENT")
-            .requestMatchers("/api/v1/**").authenticated()
+    ): DefaultSecurityFilterChain = http.csrf { it.disable() }
+        .authorizeHttpRequests {
+            it.requestMatchers("/api/auth", "/api/auth/refreshToken", "/error", *SWAGGER.toTypedArray()).permitAll()
+                // .requestMatchers(HttpMethod.POST,"/api/v1/**").hasRole("ADMIN")
+                // .requestMatchers(HttpMethod.DELETE,"/api/v1/**").hasRole("ADMIN")
+                // .requestMatchers(HttpMethod.PUT,"/api/v1/**").hasRole("STUDENT")
+                .requestMatchers("/api/v1/**").authenticated()
 
-            .anyRequest().fullyAuthenticated()
+                .anyRequest().fullyAuthenticated()
         }
-        .sessionManagement {it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        }
+        .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
         .authenticationProvider(authenticationProvider)
-        .addFilterBefore(jwtAuthenticationFilter , UsernamePasswordAuthenticationFilter::class.java)
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
         .build()
-
 }
